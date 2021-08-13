@@ -7,6 +7,7 @@ from .bleu.bleu import Bleu
 from .meteor.meteor import Meteor
 from .rouge.rouge import Rouge
 from .cider.cider import Cider
+from .ciderR.ciderR import CiderR
 from .spice.spice import Spice
 from .wmd.wmd import WMD
 
@@ -47,8 +48,9 @@ class COCOEvalCap:
             (Meteor(),"METEOR"),
             (Rouge(), "ROUGE_L"),
             (Cider(), "CIDEr"),
+            (CiderR(), "CIDEr-R"),
             (self.Spice, "SPICE"),
-            (WMD(),   "WMD"),
+            # (WMD(),   "WMD"),
         ]
 
         # =================================================

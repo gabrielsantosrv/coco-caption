@@ -1,4 +1,4 @@
-# Filename: cider.py
+# Filename: ciderR.py
 #
 # Description: Describes the class to compute the CIDEr (Consensus-Based Image Description Evaluation) Metric 
 #               by Vedantam, Zitnick, and Parikh (http://arxiv.org/abs/1411.5726)
