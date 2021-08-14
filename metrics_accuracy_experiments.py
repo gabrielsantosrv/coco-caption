@@ -164,6 +164,93 @@ def exp_5_references_abstract_50s(triplets, sent_to_index):
 
 
 
+def exp_5_references_pascal_50s(triplets, sent_to_index):
+    n_ref = 5
+    ref_data = {'images': [],
+                "licenses": [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/", "id": 1,
+                              "name": "Attribution-NonCommercial-ShareAlike License"},
+                             {"url": "http://creativecommons.org/licenses/by-nc/2.0/", "id": 2,
+                              "name": "Attribution-NonCommercial License"},
+                             {"url": "http://creativecommons.org/licenses/by-nc-nd/2.0/", "id": 3,
+                              "name": "Attribution-NonCommercial-NoDerivs License"},
+                             {"url": "http://creativecommons.org/licenses/by/2.0/", "id": 4,
+                              "name": "Attribution License"},
+                             {"url": "http://creativecommons.org/licenses/by-sa/2.0/", "id": 5,
+                              "name": "Attribution-ShareAlike License"},
+                             {"url": "http://creativecommons.org/licenses/by-nd/2.0/", "id": 6,
+                              "name": "Attribution-NoDerivs License"},
+                             {"url": "http://flickr.com/commons/usage/", "id": 7,
+                              "name": "No known copyright restrictions"},
+                             {"url": "http://www.usa.gov/copyright.shtml", "id": 8,
+                              "name": "United States Government Work"}],
+                'type': 'captions',
+                'info': {"description": "This is stable 1.0 version of the 2014 MS COCO dataset.",
+                         "url": "http://mscoco.org",
+                         "version": "1.0",
+                         "year": 2014,
+                         "contributor": "Microsoft COCO group", "date_created": "2015-01-27 09:11:52.357475"},
+                'annotations': []}
+    cand_b = []
+    cand_c = []
+    winners = {}
+    img_to_index = {}
+    for i, refs in enumerate(triplets.values()):
+        ref_data['images'].append({'id': i})
+
+        A, B, C, winner = refs[0]
+        cand_b.append({"image_id": i, "caption": B})
+        cand_c.append({"image_id": i, "caption": C})
+        refs = random.sample(refs, n_ref)
+        for ref in refs:
+            A, B, C, winner = ref
+            ref_data['annotations'].append({"image_id": i, "id": i, "caption": A})
+            winners[i] = winners.get(i, 0) + winner
+            img_to_index[i] = sent_to_index[B + C]
+
+    with open('references.json', 'w') as file:
+        json.dump(ref_data, file)
+
+    with open('captions_B.json', 'w') as file:
+        json.dump(cand_b, file)
+
+    with open('captions_C.json', 'w') as file:
+        json.dump(cand_c, file)
+
+    annFile = 'references.json'
+    resFile = 'captions_B.json'
+    results_B = compute_metrics(annFile, resFile)
+
+    resFile = 'captions_C.json'
+    results_C = compute_metrics(annFile, resFile)
+
+    HC = {'B': {img: value for img, value in results_B.items() if img_to_index[img] < 1000},
+          'C': {img: value for img, value in results_C.items() if img_to_index[img] < 1000},
+          'winners': {img: value for img, value in winners.items() if img_to_index[img] < 1000}}
+
+    HI = {'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000},
+          'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000},
+          'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000}}
+
+    HM = {'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000},
+        'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000},
+        'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000}}
+
+    MM = {'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 3000},
+        'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 3000},
+        'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 3000}}
+
+    HC_accuracies = compute_accuracy(HC['B'], HC['C'], HC['winners'])
+    HI_accuracies = compute_accuracy(HI['B'], HI['C'], HI['winners'])
+
+    HM_accuracies = compute_accuracy(HM['B'], HM['C'], HM['winners'])
+    MM_accuracies = compute_accuracy(MM['B'], MM['C'], MM['winners'])
+
+    with open('results_pascal_50S.json', 'w') as file:
+        json.dump({'HC': HC_accuracies,
+                   'HI': HI_accuracies,
+                   'HM': HM_accuracies,
+                   'MM': MM_accuracies,}, file)
+
 def exp_varying_n_refs(triplets, outputfile):
     results = {'n_ref': [],
                'Bleu_4': [],
@@ -246,6 +333,6 @@ def exp_varying_n_refs(triplets, outputfile):
 
 
 if __name__ == '__main__':
-    triplets, sent_to_index = load_triplets()
-    exp_5_references_abstract_50s(triplets, sent_to_index)
-    exp_varying_n_refs(triplets, outputfile='abstract_50S.png')
+    triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
+    exp_5_references_pascal_50s(triplets, sent_to_index)
+    # exp_varying_n_refs(triplets, outputfile='abstract_50S.png')

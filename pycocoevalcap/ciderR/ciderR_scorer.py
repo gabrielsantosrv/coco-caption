@@ -165,10 +165,11 @@ class CiderRScorer(object):
                     val[n] /= (norm_hyp[n]*norm_ref[n])
 
                 assert(not math.isnan(val[n]))
-
+                if length_ref == 0:
+                    print('sent:', sent_ref)
                 rep_penalty = utils.compute_penalty_by_repetition(sent_hyp, sent_ref,
                                                                   penalty_func=lambda x: 1 / (1 + x))
-                len_penalty = utils.compute_penalty_by_length(length_hyp, length_ref)
+                len_penalty = utils.compute_penalty_by_length(length_hyp+1, length_ref+1)
 
                 # vrama91: added a length based gaussian penalty
                 val[n] *= (rep_penalty ** coefficient_rep) * (len_penalty ** coefficient_len)
