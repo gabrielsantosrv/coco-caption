@@ -251,7 +251,7 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
                    'HM': HM_accuracies,
                    'MM': MM_accuracies,}, file)
 
-def exp_varying_n_refs(triplets, outputfile):
+def exp_varying_n_refs(triplets, imgfile, csvfile):
     results = {'n_ref': [],
                'Bleu_4': [],
                'METEOR': [],
@@ -329,10 +329,11 @@ def exp_varying_n_refs(triplets, outputfile):
     df_results = pd.DataFrame(results)
     plot = df_results.plot(x='n_ref')
     fig = plot.get_figure()
-    fig.savefig(outputfile)
+    fig.savefig(imgfile)
+    df_results.to_csv(csvfile)
 
 
 if __name__ == '__main__':
     triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
     exp_5_references_pascal_50s(triplets, sent_to_index)
-    # exp_varying_n_refs(triplets, outputfile='abstract_50S.png')
+    exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
