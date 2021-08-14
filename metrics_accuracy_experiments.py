@@ -21,12 +21,13 @@ def load_triplets(filepath='.experiment_data/consensus_abstract.mat'):
         C = str(item[2].tolist()[0][0][0])
         winner = item[3].tolist()[0][0]
 
-        triplets[B + C] = triplets.get(B + C, [])
-        triplets[B + C].append((A, B, C, winner))
+        if len(A.split(' ')) > 1:
+            triplets[B + C] = triplets.get(B + C, [])
+            triplets[B + C].append((A, B, C, winner))
 
-        if not sent_to_index.get(B + C, False):
-            sent_to_index[B + C] = index
-            index += 1
+            if not sent_to_index.get(B + C, False):
+                sent_to_index[B + C] = index
+                index += 1
 
     return triplets, sent_to_index
 
@@ -127,7 +128,8 @@ def exp_5_references_abstract_50s(triplets, sent_to_index):
         A, B, C, winner = refs[0]
         cand_b.append({"image_id": i, "caption": B})
         cand_c.append({"image_id": i, "caption": C})
-        refs = random.sample(refs, n_ref)
+        if n_ref <= len(refs):
+            refs = random.sample(refs, n_ref)
         for ref in refs:
             A, B, C, winner = ref
             ref_data['annotations'].append({"image_id": i, "id": i, "caption": A})
@@ -201,7 +203,8 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
         A, B, C, winner = refs[0]
         cand_b.append({"image_id": i, "caption": B})
         cand_c.append({"image_id": i, "caption": C})
-        refs = random.sample(refs, n_ref)
+        if n_ref <= len(refs):
+            refs = random.sample(refs, n_ref)
         for ref in refs:
             A, B, C, winner = ref
             ref_data['annotations'].append({"image_id": i, "id": i, "caption": A})
@@ -300,7 +303,8 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
             A, B, C, winner = refs[0]
             cand_b.append({"image_id": i, "caption": B})
             cand_c.append({"image_id": i, "caption": C})
-            refs = random.sample(refs, n_ref)
+            if n_ref <= len(refs):
+                refs = random.sample(refs, n_ref)
             for ref in refs:
                 A, B, C, winner = ref
                 ref_data['annotations'].append({"image_id": i, "id": i, "caption": A})
@@ -340,10 +344,10 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
 
 
 if __name__ == '__main__':
-    triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_abstract.mat')
-    exp_5_references_abstract_50s(triplets, sent_to_index)
-    exp_varying_n_refs(triplets, imgfile='abstract_50S.png', csvfile='abstract_50S.csv')
+    # triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_abstract.mat')
+    # exp_5_references_abstract_50s(triplets, sent_to_index)
+    # exp_varying_n_refs(triplets, imgfile='abstract_50S.png', csvfile='abstract_50S.csv')
 
     triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
-    exp_5_references_pascal_50s(triplets, sent_to_index)
-    exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
+    # exp_5_references_pascal_50s(triplets, sent_to_index)
+    # exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
