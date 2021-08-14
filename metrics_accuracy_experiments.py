@@ -21,12 +21,13 @@ def load_triplets(filepath='.experiment_data/consensus_abstract.mat'):
         C = str(item[2].tolist()[0][0][0])
         winner = item[3].tolist()[0][0]
 
-        triplets[B + C] = triplets.get(B + C, [])
-        triplets[B + C].append((A, B, C, winner))
+        if len(A.split(' ')) > 0:
+            triplets[B + C] = triplets.get(B + C, [])
+            triplets[B + C].append((A, B, C, winner))
 
-        if not sent_to_index.get(B + C, False):
-            sent_to_index[B + C] = index
-            index += 1
+            if not sent_to_index.get(B + C, False):
+                sent_to_index[B + C] = index
+                index += 1
 
     return triplets, sent_to_index
 
