@@ -3,6 +3,7 @@ from pycocoevalcap.eval import COCOEvalCap
 
 import json
 from json import encoder
+
 encoder.FLOAT_REPR = lambda o: format(o, '.3f')
 import random
 from scipy.io import loadmat
@@ -74,19 +75,20 @@ def compute_accuracy(results_B, results_C, winners):
                 'CIDEr': 0,
                 'CIDEr-R': 0,
                 'SPICE': 0}
-
+    win_count = 0
     for img, winner in winners.items():
-        label = winner >= 0
+        if winner != 0:
+            win_count += 1
+
         for metric in ['Bleu_4', 'METEOR', 'ROUGE_L', 'CIDEr', 'CIDEr-R', 'SPICE']:
-            pred = results_B[img][metric] >= results_C[img][metric]
-            if pred == label:
+            if (results_B[img][metric] > results_C[img][metric] and winner > 0) or \
+                    (results_B[img][metric] < results_C[img][metric] and winner < 0):
                 counters[metric] += 1
 
     for metric in ['Bleu_4', 'METEOR', 'ROUGE_L', 'CIDEr', 'CIDEr-R', 'SPICE']:
-        counters[metric] = counters[metric] / len(winners)
+        counters[metric] = counters[metric] / win_count
 
     return counters
-
 
 
 def exp_5_references_abstract_50s(triplets, sent_to_index):
@@ -160,8 +162,7 @@ def exp_5_references_abstract_50s(triplets, sent_to_index):
     HI_accuracies = compute_accuracy(HI['B'], HI['C'], HI['winners'])
 
     with open('results_abstract_50S.json', 'w') as file:
-        json.dump({'HC':HC_accuracies, 'HI':HI_accuracies}, file)
-
+        json.dump({'HC': HC_accuracies, 'HI': HI_accuracies}, file)
 
 
 def exp_5_references_pascal_50s(triplets, sent_to_index):
@@ -227,17 +228,21 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
           'C': {img: value for img, value in results_C.items() if img_to_index[img] < 1000},
           'winners': {img: value for img, value in winners.items() if img_to_index[img] < 1000}}
 
-    HI = {'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000},
-          'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000},
-          'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000}}
+    HI = {
+        'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000},
+        'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000},
+        'winners': {img: value for img, value in winners.items() if
+                    img_to_index[img] >= 1000 and img_to_index[img] < 2000}}
 
-    HM = {'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000},
+    HM = {
+        'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000},
         'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000},
-        'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000}}
+        'winners': {img: value for img, value in winners.items() if
+                    img_to_index[img] >= 2000 and img_to_index[img] < 3000}}
 
     MM = {'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 3000},
-        'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 3000},
-        'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 3000}}
+          'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 3000},
+          'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 3000}}
 
     HC_accuracies = compute_accuracy(HC['B'], HC['C'], HC['winners'])
     HI_accuracies = compute_accuracy(HI['B'], HI['C'], HI['winners'])
@@ -249,7 +254,8 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
         json.dump({'HC': HC_accuracies,
                    'HI': HI_accuracies,
                    'HM': HM_accuracies,
-                   'MM': MM_accuracies,}, file)
+                   'MM': MM_accuracies, }, file)
+
 
 def exp_varying_n_refs(triplets, imgfile, csvfile):
     results = {'n_ref': [],
@@ -334,6 +340,10 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
 
 
 if __name__ == '__main__':
+    triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_abstract.mat')
+    exp_5_references_abstract_50s(triplets, sent_to_index)
+    exp_varying_n_refs(triplets, imgfile='abstract_50S.png', csvfile='abstract_50S.csv')
+
     triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
     exp_5_references_pascal_50s(triplets, sent_to_index)
     exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
