@@ -237,6 +237,24 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
             cand_b = []
             cand_c = []
 
+    with open('references.json', 'w') as file:
+        json.dump(ref_data, file)
+
+    with open('captions_B.json', 'w') as file:
+        json.dump(cand_b, file)
+
+    with open('captions_C.json', 'w') as file:
+        json.dump(cand_c, file)
+
+    annFile = 'references.json'
+    resFile = 'captions_B.json'
+    results_B_aux = compute_metrics(annFile, resFile)
+    results_B.update(results_B_aux)
+
+    resFile = 'captions_C.json'
+    results_C_aux = compute_metrics(annFile, resFile)
+    results_C.update(results_C_aux)
+
     print('results_B', len(results_B))
     print('winners', len(winners))
 
@@ -363,4 +381,4 @@ if __name__ == '__main__':
 
     triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
     exp_5_references_pascal_50s(triplets, sent_to_index)
-    exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
+    # exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
