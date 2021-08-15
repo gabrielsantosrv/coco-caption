@@ -16,12 +16,12 @@ def load_triplets(filepath='.experiment_data/consensus_abstract.mat'):
     sent_to_index = {}
     index = 0
     for item in consensus['triplets'].tolist()[0]:
-        A = str(item[0].tolist()[0][0][0])
-        B = str(item[1].tolist()[0][0][0])
-        C = str(item[2].tolist()[0][0][0])
+        A = str(item[0].tolist()[0][0][0]).encode('ascii', 'ignore').decode()
+        B = str(item[1].tolist()[0][0][0]).encode('ascii', 'ignore').decode()
+        C = str(item[2].tolist()[0][0][0]).encode('ascii', 'ignore').decode()
         winner = item[3].tolist()[0][0]
 
-        if len(A.split(' ')) > 1:
+        if len(A.split(' ')) > 0:
             triplets[B + C] = triplets.get(B + C, [])
             triplets[B + C].append((A, B, C, winner))
 
@@ -344,10 +344,10 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
 
 
 if __name__ == '__main__':
-    # triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_abstract.mat')
-    # exp_5_references_abstract_50s(triplets, sent_to_index)
-    # exp_varying_n_refs(triplets, imgfile='abstract_50S.png', csvfile='abstract_50S.csv')
+    #triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_abstract.mat')
+    #exp_5_references_abstract_50s(triplets, sent_to_index)
+    #exp_varying_n_refs(triplets, imgfile='abstract_50S.png', csvfile='abstract_50S.csv')
 
     triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
-    # exp_5_references_pascal_50s(triplets, sent_to_index)
-    # exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
+    exp_5_references_pascal_50s(triplets, sent_to_index)
+    exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
