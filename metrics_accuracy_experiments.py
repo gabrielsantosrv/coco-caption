@@ -197,6 +197,8 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
     cand_c = []
     winners = {}
     img_to_index = {}
+    results_B = {}
+    results_C = {}
     for i, refs in enumerate(triplets.values()):
         ref_data['images'].append({'id': i})
 
@@ -211,21 +213,32 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
             winners[i] = winners.get(i, 0) + winner
             img_to_index[i] = sent_to_index[B + C]
 
-    with open('references.json', 'w') as file:
-        json.dump(ref_data, file)
+        if i % 200 == 199:
+            with open('references.json', 'w') as file:
+                json.dump(ref_data, file)
 
-    with open('captions_B.json', 'w') as file:
-        json.dump(cand_b, file)
+            with open('captions_B.json', 'w') as file:
+                json.dump(cand_b, file)
 
-    with open('captions_C.json', 'w') as file:
-        json.dump(cand_c, file)
+            with open('captions_C.json', 'w') as file:
+                json.dump(cand_c, file)
 
-    annFile = 'references.json'
-    resFile = 'captions_B.json'
-    results_B = compute_metrics(annFile, resFile)
+            annFile = 'references.json'
+            resFile = 'captions_B.json'
+            results_B_aux = compute_metrics(annFile, resFile)
+            results_B.update(results_B_aux)
 
-    resFile = 'captions_C.json'
-    results_C = compute_metrics(annFile, resFile)
+            resFile = 'captions_C.json'
+            results_C_aux = compute_metrics(annFile, resFile)
+            results_C.update(results_C_aux)
+
+            ref_data['images'] = []
+            ref_data['annotations'] = []
+            cand_b = []
+            cand_c = []
+
+    print('results_B', len(results_B))
+    print('winners', len(winners))
 
     HC = {'B': {img: value for img, value in results_B.items() if img_to_index[img] < 1000},
           'C': {img: value for img, value in results_C.items() if img_to_index[img] < 1000},
