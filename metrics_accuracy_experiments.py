@@ -328,6 +328,8 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
         cand_b = []
         cand_c = []
         winners = {}
+        results_B = {}
+        results_C = {}
         for i, refs in enumerate(triplets.values()):
             ref_data['images'].append({'id': i})
 
@@ -341,6 +343,30 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
                 ref_data['annotations'].append({"image_id": i, "id": i, "caption": A})
                 winners[i] = winners.get(i, 0) + winner
 
+            if i % 500 == 499:
+                with open('references.json', 'w') as file:
+                    json.dump(ref_data, file)
+
+                with open('captions_B.json', 'w') as file:
+                    json.dump(cand_b, file)
+
+                with open('captions_C.json', 'w') as file:
+                    json.dump(cand_c, file)
+
+                annFile = 'references.json'
+                resFile = 'captions_B.json'
+                results_B_aux = compute_metrics(annFile, resFile)
+                results_B.update(results_B_aux)
+
+                resFile = 'captions_C.json'
+                results_C_aux = compute_metrics(annFile, resFile)
+                results_C.update(results_C_aux)
+
+                ref_data['images'] = []
+                ref_data['annotations'] = []
+                cand_b = []
+                cand_c = []
+
         with open('references.json', 'w') as file:
             json.dump(ref_data, file)
 
@@ -352,10 +378,12 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
 
         annFile = 'references.json'
         resFile = 'captions_B.json'
-        results_B = compute_metrics(annFile, resFile)
+        results_B_aux = compute_metrics(annFile, resFile)
+        results_B.update(results_B_aux)
 
         resFile = 'captions_C.json'
-        results_C = compute_metrics(annFile, resFile)
+        results_C_aux = compute_metrics(annFile, resFile)
+        results_C.update(results_C_aux)
 
         accuracies = compute_accuracy(results_B, results_C, winners)
 
