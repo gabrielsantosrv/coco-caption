@@ -213,7 +213,7 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
             winners[i] = winners.get(i, 0) + winner
             img_to_index[i] = sent_to_index[B + C]
 
-        if i % 200 == 199:
+        if i % 500 == 499:
             with open('references.json', 'w') as file:
                 json.dump(ref_data, file)
 
@@ -381,4 +381,4 @@ if __name__ == '__main__':
 
     triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
     exp_5_references_pascal_50s(triplets, sent_to_index)
-    # exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
+    exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
