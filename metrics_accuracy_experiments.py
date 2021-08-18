@@ -15,19 +15,27 @@ def load_triplets(filepath='.experiment_data/consensus_abstract.mat'):
     triplets = {}
     sent_to_index = {}
     index = 0
-    for item in consensus['triplets'].tolist()[0]:
-        A = str(item[0].tolist()[0][0][0]).encode('ascii', 'ignore').decode()
-        B = str(item[1].tolist()[0][0][0]).encode('ascii', 'ignore').decode()
-        C = str(item[2].tolist()[0][0][0]).encode('ascii', 'ignore').decode()
-        winner = item[3].tolist()[0][0]
+    for item in consensus['triplets'][0]:
+        A = str(item[0][0][0][0]).encode('ascii', 'ignore').decode()
+        B = str(item[1][0][0][0]).encode('ascii', 'ignore').decode()
+        C = str(item[2][0][0][0]).encode('ascii', 'ignore').decode()
+        winner = item[3][0][0]
 
-        if len(A.split(' ')) > 0:
-            triplets[B + C] = triplets.get(B + C, [])
-            triplets[B + C].append((A, B, C, winner))
+        key = B + C
+        triplets[key] = triplets.get(key, [])
+        bucket = ''
+        if len(triplets[key]) == 48:
+            bucket = 1
+            while len(triplets.get(key + str(bucket), [])) == 48:
+                bucket += 1
+            key = key + str(bucket)
+            triplets[key] = triplets.get(key, [])
 
-            if sent_to_index.get(B + C, None) is None:
-                sent_to_index[B + C] = index
-                index += 1
+        triplets[key].append((A, B, C, winner, bucket))
+
+        if sent_to_index.get(key, None) is None:
+            sent_to_index[key] = index
+            index += 1
 
     return triplets, sent_to_index
 
@@ -75,6 +83,7 @@ def compute_accuracy(results_B, results_C, winners):
                 'CIDEr': 0,
                 'CIDEr-R': 0,
                 'SPICE': 0}
+    print('computing accuracy...', len(winners), 'elements')
     win_count = 0
     for img, winner in winners.items():
         if winner != 0:
@@ -91,83 +100,23 @@ def compute_accuracy(results_B, results_C, winners):
     return counters
 
 
-def exp_5_references_abstract_50s(triplets, sent_to_index):
-    n_ref = 5
-    ref_data = {'images': [],
-                "licenses": [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/", "id": 1,
-                              "name": "Attribution-NonCommercial-ShareAlike License"},
-                             {"url": "http://creativecommons.org/licenses/by-nc/2.0/", "id": 2,
-                              "name": "Attribution-NonCommercial License"},
-                             {"url": "http://creativecommons.org/licenses/by-nc-nd/2.0/", "id": 3,
-                              "name": "Attribution-NonCommercial-NoDerivs License"},
-                             {"url": "http://creativecommons.org/licenses/by/2.0/", "id": 4,
-                              "name": "Attribution License"},
-                             {"url": "http://creativecommons.org/licenses/by-sa/2.0/", "id": 5,
-                              "name": "Attribution-ShareAlike License"},
-                             {"url": "http://creativecommons.org/licenses/by-nd/2.0/", "id": 6,
-                              "name": "Attribution-NoDerivs License"},
-                             {"url": "http://flickr.com/commons/usage/", "id": 7,
-                              "name": "No known copyright restrictions"},
-                             {"url": "http://www.usa.gov/copyright.shtml", "id": 8,
-                              "name": "United States Government Work"}],
-                'type': 'captions',
-                'info': {"description": "This is stable 1.0 version of the 2014 MS COCO dataset.",
-                         "url": "http://mscoco.org",
-                         "version": "1.0",
-                         "year": 2014,
-                         "contributor": "Microsoft COCO group", "date_created": "2015-01-27 09:11:52.357475"},
-                'annotations': []}
-    cand_b = []
-    cand_c = []
-    winners = {}
-    img_to_index = {}
-    for i, refs in enumerate(triplets.values()):
-        ref_data['images'].append({'id': i})
-
-        A, B, C, winner = refs[0]
-        cand_b.append({"image_id": i, "caption": B})
-        cand_c.append({"image_id": i, "caption": C})
-        if n_ref <= len(refs):
-            refs = random.sample(refs, n_ref)
-
-        for ref in refs:
-            A, B, C, winner = ref
-            ref_data['annotations'].append({"image_id": i, "id": i, "caption": A})
-            winners[i] = winners.get(i, 0) + winner
-            img_to_index[i] = sent_to_index[B + C]
-
-    with open('references.json', 'w') as file:
-        json.dump(ref_data, file)
-
-    with open('captions_B.json', 'w') as file:
-        json.dump(cand_b, file)
-
-    with open('captions_C.json', 'w') as file:
-        json.dump(cand_c, file)
-
-    annFile = 'references.json'
-    resFile = 'captions_B.json'
-    results_B = compute_metrics(annFile, resFile)
-
-    resFile = 'captions_C.json'
-    results_C = compute_metrics(annFile, resFile)
-
-    HC = {'B': {img: value for img, value in results_B.items() if img_to_index[img] < 200},
-          'C': {img: value for img, value in results_C.items() if img_to_index[img] < 200},
-          'winners': {img: value for img, value in winners.items() if img_to_index[img] < 200}}
-
-    HI = {'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 200},
-          'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 200},
-          'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 200}}
-
-    HC_accuracies = compute_accuracy(HC['B'], HC['C'], HC['winners'])
-    HI_accuracies = compute_accuracy(HI['B'], HI['C'], HI['winners'])
-
-    with open('results_abstract_50S.json', 'w') as file:
-        json.dump({'HC': HC_accuracies, 'HI': HI_accuracies}, file)
+def get_class(pair):
+    if pair[0] <= 5:
+        if pair[1] <= 5:
+            return 'MM'
+        if pair[1] == 6:
+            return 'HM'
+    elif pair[0] == 6:
+        if pair[1] <= 5:
+            return 'HM'
+        if pair[1] == 6:
+            return 'HC'
+        if pair[1] == 7:
+            return 'HI'
+    return None
 
 
-def exp_5_references_pascal_50s(triplets, sent_to_index):
+def exp_5_references_pascal_50s(triplets, sent_to_index, pairs):
     n_ref = 5
     ref_data = {'images': [],
                 "licenses": [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/", "id": 1,
@@ -202,16 +151,16 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
     for i, refs in enumerate(triplets.values()):
         ref_data['images'].append({'id': i})
 
-        A, B, C, winner = refs[0]
+        A, B, C, winner, bucket = refs[0]
         cand_b.append({"image_id": i, "caption": B})
         cand_c.append({"image_id": i, "caption": C})
         if n_ref <= len(refs):
             refs = random.sample(refs, n_ref)
         for ref in refs:
-            A, B, C, winner = ref
+            A, B, C, winner, bucket = ref
             ref_data['annotations'].append({"image_id": i, "id": i, "caption": A})
             winners[i] = winners.get(i, 0) + winner
-            img_to_index[i] = sent_to_index[B + C]
+            img_to_index[i] = sent_to_index[B + C + str(bucket)]
 
         if i % 500 == 499:
             with open('references.json', 'w') as file:
@@ -237,46 +186,25 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
             cand_b = []
             cand_c = []
 
-    with open('references.json', 'w') as file:
-        json.dump(ref_data, file)
-
-    with open('captions_B.json', 'w') as file:
-        json.dump(cand_b, file)
-
-    with open('captions_C.json', 'w') as file:
-        json.dump(cand_c, file)
-
-    annFile = 'references.json'
-    resFile = 'captions_B.json'
-    results_B_aux = compute_metrics(annFile, resFile)
-    results_B.update(results_B_aux)
-
-    resFile = 'captions_C.json'
-    results_C_aux = compute_metrics(annFile, resFile)
-    results_C.update(results_C_aux)
-
-    print('results_B', len(results_B))
-    print('winners', len(winners))
-
-    HC = {'B': {img: value for img, value in results_B.items() if img_to_index[img] < 1000},
-          'C': {img: value for img, value in results_C.items() if img_to_index[img] < 1000},
-          'winners': {img: value for img, value in winners.items() if img_to_index[img] < 1000}}
+    accuracies = compute_accuracy(results_B, results_C, winners)
+    print(accuracies)
+    HC = {'B': {img: value for img, value in results_B.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HC'},
+          'C': {img: value for img, value in results_C.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HC'},
+          'winners': {img: value for img, value in winners.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HC'}}
 
     HI = {
-        'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000},
-        'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 1000 and img_to_index[img] < 2000},
-        'winners': {img: value for img, value in winners.items() if
-                    img_to_index[img] >= 1000 and img_to_index[img] < 2000}}
+        'B': {img: value for img, value in results_B.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HI'},
+        'C': {img: value for img, value in results_C.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HI'},
+        'winners': {img: value for img, value in winners.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HI'}}
 
     HM = {
-        'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000},
-        'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 2000 and img_to_index[img] < 3000},
-        'winners': {img: value for img, value in winners.items() if
-                    img_to_index[img] >= 2000 and img_to_index[img] < 3000}}
+        'B': {img: value for img, value in results_B.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HM'},
+        'C': {img: value for img, value in results_C.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HM'},
+        'winners': {img: value for img, value in winners.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'HM'}}
 
-    MM = {'B': {img: value for img, value in results_B.items() if img_to_index[img] >= 3000},
-          'C': {img: value for img, value in results_C.items() if img_to_index[img] >= 3000},
-          'winners': {img: value for img, value in winners.items() if img_to_index[img] >= 3000}}
+    MM = {'B': {img: value for img, value in results_B.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'MM'},
+          'C': {img: value for img, value in results_C.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'MM'},
+          'winners': {img: value for img, value in winners.items() if get_class(pairs['new_data'][img_to_index[img]]) == 'MM'}}
 
     HC_accuracies = compute_accuracy(HC['B'], HC['C'], HC['winners'])
     HI_accuracies = compute_accuracy(HI['B'], HI['C'], HI['winners'])
@@ -290,8 +218,7 @@ def exp_5_references_pascal_50s(triplets, sent_to_index):
                    'HM': HM_accuracies,
                    'MM': MM_accuracies, }, file)
 
-
-def exp_varying_n_refs(triplets, imgfile, csvfile):
+def exp_varying_n_refs(triplets, imgfile, csvfile, sent_to_index, pairs=None, only_MM=False):
     results = {'n_ref': [],
                'Bleu_4': [],
                'METEOR': [],
@@ -300,7 +227,7 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
                'CIDEr-R': [],
                'SPICE': []}
     all_refs = {}
-    for n_ref in range(1, 6):
+    for n_ref in range(1, 49):
         ref_data = {'images': [],
                     "licenses": [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/", "id": 1,
                                   "name": "Attribution-NonCommercial-ShareAlike License"},
@@ -330,10 +257,11 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
         winners = {}
         results_B = {}
         results_C = {}
+        img_to_index = {}
         for i, refs in enumerate(triplets.values()):
             ref_data['images'].append({'id': i})
 
-            A, B, C, winner = refs[0]
+            A, B, C, winner, _ = refs[0]
             cand_b.append({"image_id": i, "caption": B})
             cand_c.append({"image_id": i, "caption": C})
             all_refs[i] = all_refs.get(i, [])
@@ -343,9 +271,10 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
                 all_refs[i].append(ref)
 
             for ref in all_refs[i]:
-                A, B, C, winner = ref
+                A, B, C, winner, bucket = ref
                 ref_data['annotations'].append({"image_id": i, "id": i, "caption": A})
                 winners[i] = winners.get(i, 0) + winner
+                img_to_index[i] = sent_to_index[B + C + str(bucket)]
 
             if i % 500 == 499:
                 with open('references.json', 'w') as file:
@@ -371,25 +300,19 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
                 cand_b = []
                 cand_c = []
 
-        with open('references.json', 'w') as file:
-            json.dump(ref_data, file)
+        if only_MM:
+            MM = {'B': {img: value for img, value in results_B.items() if
+                        get_class(pairs['new_data'][img_to_index[img]]) == 'MM'},
 
-        with open('captions_B.json', 'w') as file:
-            json.dump(cand_b, file)
+                  'C': {img: value for img, value in results_C.items() if
+                        get_class(pairs['new_data'][img_to_index[img]]) == 'MM'},
 
-        with open('captions_C.json', 'w') as file:
-            json.dump(cand_c, file)
+                  'winners': {img: value for img, value in winners.items() if
+                              get_class(pairs['new_data'][img_to_index[img]]) == 'MM'}}
 
-        annFile = 'references.json'
-        resFile = 'captions_B.json'
-        results_B_aux = compute_metrics(annFile, resFile)
-        results_B.update(results_B_aux)
-
-        resFile = 'captions_C.json'
-        results_C_aux = compute_metrics(annFile, resFile)
-        results_C.update(results_C_aux)
-
-        accuracies = compute_accuracy(results_B, results_C, winners)
+            accuracies = compute_accuracy(MM['B'], MM['C'], MM['winners'])
+        else:
+            accuracies = compute_accuracy(results_B, results_C, winners)
 
         results['n_ref'].append(n_ref)
         results['Bleu_4'].append(accuracies['Bleu_4'])
@@ -407,10 +330,10 @@ def exp_varying_n_refs(triplets, imgfile, csvfile):
 
 
 if __name__ == '__main__':
-    triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_abstract.mat')
-    # exp_5_references_abstract_50s(triplets, sent_to_index)
-    exp_varying_n_refs(triplets, imgfile='abstract_50S.png', csvfile='abstract_50S.csv')
+    triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
+    pairs = loadmat('experiment_data/pair_pascal.mat')
+    exp_5_references_pascal_50s(triplets, sent_to_index, pairs=pairs)
 
-    # triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
-    # exp_5_references_pascal_50s(triplets, sent_to_index)
-    # exp_varying_n_refs(triplets, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
+    exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
+    exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S_only_MM.png', csvfile='pascal_50S_only_MM.csv',
+                       only_MM=True, pairs=pairs)
