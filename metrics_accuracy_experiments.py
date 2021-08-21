@@ -10,7 +10,7 @@ from scipy.io import loadmat
 import pandas as pd
 
 
-def load_triplets(filepath='.experiment_data/consensus_abstract.mat'):
+def load_pascal_triplets(filepath='experiment_data/consensus_pascal.mat'):
     consensus = loadmat(filepath)
     triplets = {}
     sent_to_index = {}
@@ -65,7 +65,7 @@ def compute_metrics(annFile, resFile):
         ROUGE_L = item['ROUGE_L']
         CIDEr = item['CIDEr']
         CIDEr_R = item['CIDEr-R']
-        SPICE = item['SPICE']['All']['f']
+        SPICE = 0#item['SPICE']['All']['f']
         results[image_id] = {'Bleu_4': Bleu_4,
                              'METEOR': METEOR,
                              'ROUGE_L': ROUGE_L,
@@ -266,7 +266,7 @@ def exp_varying_n_refs(triplets, imgfile, csvfile, sent_to_index, pairs=None, on
             cand_c.append({"image_id": i, "caption": C})
             all_refs[i] = all_refs.get(i, [])
 
-            if n_ref <= len(refs):
+            if n_ref <= len(refs) and len(list(set(refs) - set(all_refs[i]))) > 0:
                 ref = random.choice(list(set(refs) - set(all_refs[i])))
                 all_refs[i].append(ref)
 
@@ -329,11 +329,114 @@ def exp_varying_n_refs(triplets, imgfile, csvfile, sent_to_index, pairs=None, on
     df_results.to_csv(csvfile)
 
 
-if __name__ == '__main__':
-    triplets, sent_to_index = load_triplets(filepath='experiment_data/consensus_pascal.mat')
-    pairs = loadmat('experiment_data/pair_pascal.mat')
-    exp_5_references_pascal_50s(triplets, sent_to_index, pairs=pairs)
+def compute_accuracy_pracegover(data):
+    ref_data = {'images': [],
+                "licenses": [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/", "id": 1,
+                              "name": "Attribution-NonCommercial-ShareAlike License"},
+                             {"url": "http://creativecommons.org/licenses/by-nc/2.0/", "id": 2,
+                              "name": "Attribution-NonCommercial License"},
+                             {"url": "http://creativecommons.org/licenses/by-nc-nd/2.0/", "id": 3,
+                              "name": "Attribution-NonCommercial-NoDerivs License"},
+                             {"url": "http://creativecommons.org/licenses/by/2.0/", "id": 4,
+                              "name": "Attribution License"},
+                             {"url": "http://creativecommons.org/licenses/by-sa/2.0/", "id": 5,
+                              "name": "Attribution-ShareAlike License"},
+                             {"url": "http://creativecommons.org/licenses/by-nd/2.0/", "id": 6,
+                              "name": "Attribution-NoDerivs License"},
+                             {"url": "http://flickr.com/commons/usage/", "id": 7,
+                              "name": "No known copyright restrictions"},
+                             {"url": "http://www.usa.gov/copyright.shtml", "id": 8,
+                              "name": "United States Government Work"}],
+                'type': 'captions',
+                'info': {"description": "This is stable 1.0 version of the 2014 MS COCO dataset.",
+                         "url": "http://mscoco.org",
+                         "version": "1.0",
+                         "year": 2014,
+                         "contributor": "Microsoft COCO group", "date_created": "2015-01-27 09:11:52.357475"},
+                'annotations': []}
+    cand_b = []
+    cand_c = []
+    winners = {}
 
-    exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
-    exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S_only_MM.png', csvfile='pascal_50S_only_MM.csv',
-                       only_MM=True, pairs=pairs)
+    results_B = {}
+    results_C = {}
+    for k, triplet in data.items():
+        k = int(k)
+        A, B, C, winner = triplet
+        ref_data['images'].append({'id': k})
+
+        cand_b.append({"image_id": k, "caption": B})
+        cand_c.append({"image_id": k, "caption": C})
+        ref_data['annotations'].append({"image_id": k, "id": k, "caption": A})
+        winners[k] = winner
+
+        if k % 500 == 499:
+            with open('references.json', 'w') as file:
+                json.dump(ref_data, file)
+
+            with open('captions_B.json', 'w') as file:
+                json.dump(cand_b, file)
+
+            with open('captions_C.json', 'w') as file:
+                json.dump(cand_c, file)
+
+            annFile = 'references.json'
+            resFile = 'captions_B.json'
+            results_B_aux = compute_metrics(annFile, resFile)
+            results_B.update(results_B_aux)
+
+            resFile = 'captions_C.json'
+            results_C_aux = compute_metrics(annFile, resFile)
+            results_C.update(results_C_aux)
+
+            ref_data['images'] = []
+            ref_data['annotations'] = []
+            cand_b = []
+            cand_c = []
+
+    if len(cand_b) > 0:
+        with open('references.json', 'w') as file:
+            json.dump(ref_data, file)
+
+        with open('captions_B.json', 'w') as file:
+            json.dump(cand_b, file)
+
+        with open('captions_C.json', 'w') as file:
+            json.dump(cand_c, file)
+
+        annFile = 'references.json'
+        resFile = 'captions_B.json'
+        results_B_aux = compute_metrics(annFile, resFile)
+        results_B.update(results_B_aux)
+
+        resFile = 'captions_C.json'
+        results_C_aux = compute_metrics(annFile, resFile)
+        results_C.update(results_C_aux)
+
+    return compute_accuracy(results_B, results_C, winners)
+
+def exp_pracegover(output_file, filepath='experiment_data/pracegover_triplets.json'):
+    with open(filepath) as file:
+        data = json.load(file)
+
+    accuracies = compute_accuracy_pracegover(data['HCI'])
+    print('HCI', accuracies)
+
+    accuracies = compute_accuracy_pracegover(data['HII'])
+    print('HII', accuracies)
+
+
+    # with open('results_pracegover.json', 'w') as file:
+    #     json.dump(accuracies, file)
+
+
+if __name__ == '__main__':
+    # triplets, sent_to_index = load_pascal_triplets()
+    # pairs = loadmat('experiment_data/pair_pascal.mat')
+    # exp_5_references_pascal_50s(triplets, sent_to_index, pairs=pairs)
+    #
+    # exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
+    # exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S_only_MM.png', csvfile='pascal_50S_only_MM.csv',
+    #                    only_MM=True, pairs=pairs)
+
+    exp_pracegover(output_file='output.log')
