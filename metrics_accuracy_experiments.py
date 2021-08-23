@@ -415,19 +415,20 @@ def compute_accuracy_pracegover(data):
 
     return compute_accuracy(results_B, results_C, winners)
 
-def exp_pracegover(output_file, filepath='experiment_data/pracegover_triplets.json'):
+def exp_pracegover(output_file, filepath='experiment_data/pracegover_triplets_complete.json'):
     with open(filepath) as file:
         data = json.load(file)
 
-    accuracies = compute_accuracy_pracegover(data['HCI'])
+    accuracies = {}
+    accuracies['HCI'] = compute_accuracy_pracegover(data['HCI'])
     print('HCI', accuracies)
 
-    accuracies = compute_accuracy_pracegover(data['HII'])
+    accuracies['HII'] = compute_accuracy_pracegover(data['HII'])
     print('HII', accuracies)
 
 
-    # with open('results_pracegover.json', 'w') as file:
-    #     json.dump(accuracies, file)
+    with open(output_file, 'w') as file:
+        json.dump(accuracies, file)
 
 
 if __name__ == '__main__':
@@ -439,4 +440,4 @@ if __name__ == '__main__':
     # exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S_only_MM.png', csvfile='pascal_50S_only_MM.csv',
     #                    only_MM=True, pairs=pairs)
 
-    exp_pracegover(output_file='output.log')
+    exp_pracegover(output_file='results_pracegover_complete.json')

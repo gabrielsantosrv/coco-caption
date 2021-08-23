@@ -4,7 +4,7 @@ import random
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-with open('pracegover_duplications.json') as file:
+with open('pracegover_duplications_complete.json') as file:
     data = json.load(file)
 
 selected_sents = []
@@ -18,9 +18,10 @@ for k, v in data.items():
     X = vectorizer.fit_transform(sents)
     matrix = cosine_similarity(X, X)
     sent_to_remove = []
-    for i in range(1, matrix.shape[0]):
-        if matrix[0, i] > 0.5:
-            sent_to_remove.append(i)
+    for i in range(0, matrix.shape[0]):
+        for j in range(i+1, matrix.shape[0]):
+            if matrix[i, j] > 0.75:
+                sent_to_remove.append(j)
     sents = [s for i, s in enumerate(sents) if i not in sent_to_remove]
     if len(sents) > 1:
         selected_sents.append(sents)
@@ -45,5 +46,5 @@ for i, sents in enumerate(selected_sents):
             index += 1
 
 print(len(triplets))
-with open('pracegover_triplets.json', 'w') as file:
+with open('pracegover_triplets_complete.json', 'w') as file:
     json.dump(triplets, file)
