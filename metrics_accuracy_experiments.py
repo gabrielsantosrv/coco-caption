@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from pycocotools.coco import COCO
 from pycocoevalcap.eval import COCOEvalCap
 
@@ -65,7 +67,7 @@ def compute_metrics(annFile, resFile):
         ROUGE_L = item['ROUGE_L']
         CIDEr = item['CIDEr']
         CIDEr_R = item['CIDEr-R']
-        SPICE = 0#item['SPICE']['All']['f']
+        SPICE = item['SPICE']['All']['f']
         results[image_id] = {'Bleu_4': Bleu_4,
                              'METEOR': METEOR,
                              'ROUGE_L': ROUGE_L,
@@ -218,7 +220,7 @@ def exp_5_references_pascal_50s(triplets, sent_to_index, pairs):
                    'HM': HM_accuracies,
                    'MM': MM_accuracies, }, file)
 
-def exp_varying_n_refs(triplets, imgfile, csvfile, sent_to_index, pairs=None, only_MM=False):
+def exp_pascal_varying_n_refs(triplets, imgfile, csvfile, sent_to_index, pairs=None, only_MM=False):
     results = {'n_ref': [],
                'Bleu_4': [],
                'METEOR': [],
@@ -327,6 +329,121 @@ def exp_varying_n_refs(triplets, imgfile, csvfile, sent_to_index, pairs=None, on
     fig = plot.get_figure()
     fig.savefig(imgfile)
     df_results.to_csv(csvfile)
+
+def exp_mscoco_varying_n_refs(captions, imgfile, csvfile):
+    results = {'n_ref': [],
+               'Bleu_4': [],
+               'METEOR': [],
+               'ROUGE_L': [],
+               'CIDEr': [],
+               'CIDEr-R': [],
+               'SPICE': []}
+    all_refs = defaultdict(lambda: [])
+    for n_ref in range(1, 5):
+        ref_data = {'images': [],
+                    "licenses": [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/", "id": 1,
+                                  "name": "Attribution-NonCommercial-ShareAlike License"},
+                                 {"url": "http://creativecommons.org/licenses/by-nc/2.0/", "id": 2,
+                                  "name": "Attribution-NonCommercial License"},
+                                 {"url": "http://creativecommons.org/licenses/by-nc-nd/2.0/", "id": 3,
+                                  "name": "Attribution-NonCommercial-NoDerivs License"},
+                                 {"url": "http://creativecommons.org/licenses/by/2.0/", "id": 4,
+                                  "name": "Attribution License"},
+                                 {"url": "http://creativecommons.org/licenses/by-sa/2.0/", "id": 5,
+                                  "name": "Attribution-ShareAlike License"},
+                                 {"url": "http://creativecommons.org/licenses/by-nd/2.0/", "id": 6,
+                                  "name": "Attribution-NoDerivs License"},
+                                 {"url": "http://flickr.com/commons/usage/", "id": 7,
+                                  "name": "No known copyright restrictions"},
+                                 {"url": "http://www.usa.gov/copyright.shtml", "id": 8,
+                                  "name": "United States Government Work"}],
+                    'type': 'captions',
+                    'info': {"description": "This is stable 1.0 version of the 2014 MS COCO dataset.",
+                             "url": "http://mscoco.org",
+                             "version": "1.0",
+                             "year": 2014,
+                             "contributor": "Microsoft COCO group", "date_created": "2015-01-27 09:11:52.357475"},
+                    'annotations': []}
+        cand_b = []
+        cand_c = []
+        winners = {}
+        results_B = {}
+        results_C = {}
+        count = 0
+        for img, triplets in captions.items():
+            ref_data['images'].append({'id': img})
+            refs, B, C, winner = triplets
+            cand_b.append({"image_id": img, "caption": B})
+            cand_c.append({"image_id": img, "caption": C})
+
+            if n_ref <= len(refs):
+                ref = random.choice(list(set(refs) - set(all_refs[img])))
+                all_refs[img].append(ref)
+
+            for ref in all_refs[img]:
+                ref_data['annotations'].append({"image_id": img, "id": img, "caption": ref})
+                winners[img] = winners.get(img, 0) + winner
+
+            if count % 500 == 499:
+                with open('references.json', 'w') as file:
+                    json.dump(ref_data, file)
+
+                with open('captions_B.json', 'w') as file:
+                    json.dump(cand_b, file)
+
+                with open('captions_C.json', 'w') as file:
+                    json.dump(cand_c, file)
+
+                annFile = 'references.json'
+                resFile = 'captions_B.json'
+                results_B_aux = compute_metrics(annFile, resFile)
+                results_B.update(results_B_aux)
+
+                resFile = 'captions_C.json'
+                results_C_aux = compute_metrics(annFile, resFile)
+                results_C.update(results_C_aux)
+
+                ref_data['images'] = []
+                ref_data['annotations'] = []
+                cand_b = []
+                cand_c = []
+            count += 1
+
+        if count % 500 == 499:
+            with open('references.json', 'w') as file:
+                json.dump(ref_data, file)
+
+            with open('captions_B.json', 'w') as file:
+                json.dump(cand_b, file)
+
+            with open('captions_C.json', 'w') as file:
+                json.dump(cand_c, file)
+
+            annFile = 'references.json'
+            resFile = 'captions_B.json'
+            results_B_aux = compute_metrics(annFile, resFile)
+            results_B.update(results_B_aux)
+
+            resFile = 'captions_C.json'
+            results_C_aux = compute_metrics(annFile, resFile)
+            results_C.update(results_C_aux)
+
+        accuracies = compute_accuracy(results_B, results_C, winners)
+
+        results['n_ref'].append(n_ref)
+        results['Bleu_4'].append(accuracies['Bleu_4'])
+        results['METEOR'].append(accuracies['METEOR'])
+        results['ROUGE_L'].append(accuracies['ROUGE_L'])
+        results['CIDEr'].append(accuracies['CIDEr'])
+        results['CIDEr-R'].append(accuracies['CIDEr-R'])
+        results['SPICE'].append(accuracies['SPICE'])
+
+    df_results = pd.DataFrame(results)
+    plot = df_results.plot(x='n_ref')
+    fig = plot.get_figure()
+    fig.savefig(imgfile)
+    df_results.to_csv(csvfile)
+
 
 
 def compute_accuracy_pracegover(data):
@@ -440,4 +557,9 @@ if __name__ == '__main__':
     # exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S_only_MM.png', csvfile='pascal_50S_only_MM.csv',
     #                    only_MM=True, pairs=pairs)
 
-    exp_pracegover(output_file='results_pracegover_complete.json')
+    # exp_pracegover(output_file='results_pracegover_complete.json')
+    with open('experiment_data/mscoco_triplets_complete.json') as file:
+        data = json.load(file)
+
+    exp_mscoco_varying_n_refs(data['HCI'], imgfile='mscoco_HCI.png', csvfile='mscoco_HCI.csv')
+    exp_mscoco_varying_n_refs(data['HII'], imgfile='mscoco_HII.png', csvfile='mscoco_HII.csv')
