@@ -51,13 +51,13 @@ correct_cand.extend([{"image_id": i, "caption": 'a dog with a remote control'} f
 ### incorrect candidate
 
 incorrect_cand = [{"image_id": i, "caption": 'A young dog is preparing to blow out her candle'} for i in range(5)]
-incorrect_cand.extend([{"image_id": i, "caption": 'a bird sitting on the back of a horse and a dog and bird standing on the ground.'} for i in range(5, 10)])
+incorrect_cand.extend([{"image_id": i, "caption": 'a bird sitting on  the on of a cat and a dog and a dog and and standing on next to'} for i in range(5, 10)])
 
 incorrect_cand.append({"image_id": 10, "caption": 'cat laying on couch looking into distance with remote control by paw'})
 incorrect_cand.append({"image_id": 11, "caption": 'cat looking into distance with remote control by paw'})
 incorrect_cand.append({"image_id": 12, "caption": 'cat looking into distance'})
 incorrect_cand.append({"image_id": 13, "caption": 'cat with remote control by paw'})
-incorrect_cand.append({"image_id": 14, "caption": 'a cat with remote control '})
+incorrect_cand.append({"image_id": 14, "caption": 'a cat with a remote control'})
 
 with open('toy_candidate_classification/toy_candidate_classification_references.json', 'w') as file:
     json.dump(ref_data, file)
