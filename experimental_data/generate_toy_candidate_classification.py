@@ -46,7 +46,7 @@ correct_cand = [{"image_id": 0, "caption": 'A young girl is about to blow out he
                 {"image_id": 8, "caption": 'a dog and a cow with a bird sitting on its back'},
                 {"image_id": 9, "caption": 'a cow and a dog on a street'}]
 
-correct_cand.extend([{"image_id": i, "caption": 'a dog next to a remote control'} for i in range(10,15)])
+correct_cand.extend([{"image_id": i, "caption": 'a dog laying with a remote control'} for i in range(10,15)])
 
 ### incorrect candidate
 
@@ -54,7 +54,7 @@ incorrect_cand = [{"image_id": i, "caption": 'A young dog is preparing to blow o
 incorrect_cand.extend([{"image_id": i, "caption": 'a bird sitting on  the on on on cat and a dog and a dog and and sitting on next to'} for i in range(5, 10)])
 
 incorrect_cand.append({"image_id": 10, "caption": 'cat laying on couch looking into distance with remote control by paw'})
-incorrect_cand.append({"image_id": 11, "caption": 'cat looking into distance with remote control by paw'})
+incorrect_cand.append({"image_id": 11, "caption": 'cat looking into distance with remote control'})
 incorrect_cand.append({"image_id": 12, "caption": 'cat looking into distance'})
 incorrect_cand.append({"image_id": 13, "caption": 'cat with remote control by paw'})
 incorrect_cand.append({"image_id": 14, "caption": 'a cat with a remote control'})
