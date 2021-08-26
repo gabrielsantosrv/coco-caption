@@ -36,7 +36,7 @@ class COCOEvalCap:
         # =================================================
         print('tokenization...')
         tokenizer = PTBTokenizer()
-        gts  = tokenizer.tokenize(gts)
+        gts = tokenizer.tokenize(gts)
         res = tokenizer.tokenize(res)
 
         # =================================================
@@ -49,7 +49,7 @@ class COCOEvalCap:
             (Rouge(), "ROUGE_L"),
             (Cider(), "CIDEr"),
             (CiderR(), "CIDEr-R"),
-            (self.Spice, "SPICE"),
+            # (self.Spice, "SPICE"),
             # (WMD(),   "WMD"),
         ]
 
@@ -74,6 +74,9 @@ class COCOEvalCap:
         self.eval[method] = score
 
     def setImgToEvalImgs(self, scores, imgIds, method):
+        if method == 'METEOR':
+            imgIds.sort()
+
         for imgId, score in zip(imgIds, scores):
             if not imgId in self.imgToEval:
                 self.imgToEval[imgId] = {}
