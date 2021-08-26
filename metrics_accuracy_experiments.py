@@ -12,7 +12,7 @@ from scipy.io import loadmat
 import pandas as pd
 
 
-def load_pascal_triplets(filepath='experiment_data/consensus_pascal.mat'):
+def load_pascal_triplets(filepath='experimental_data/consensus_pascal.mat'):
     consensus = loadmat(filepath)
     triplets = {}
     sent_to_index = {}
@@ -445,7 +445,6 @@ def exp_mscoco_varying_n_refs(captions, imgfile, csvfile):
     df_results.to_csv(csvfile)
 
 
-
 def compute_accuracy_pracegover(data):
     ref_data = {'images': [],
                 "licenses": [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/", "id": 1,
@@ -532,7 +531,7 @@ def compute_accuracy_pracegover(data):
 
     return compute_accuracy(results_B, results_C, winners)
 
-def exp_pracegover(output_file, filepath='experiment_data/pracegover_triplets_complete.json'):
+def exp_pracegover(output_file, filepath='experimental_data/pracegover_triplets_complete.json'):
     with open(filepath) as file:
         data = json.load(file)
 
@@ -547,10 +546,42 @@ def exp_pracegover(output_file, filepath='experiment_data/pracegover_triplets_co
     with open(output_file, 'w') as file:
         json.dump(accuracies, file)
 
+def compute_score_for_toy_candidate_classification():
+    annFile = 'experimental_data/toy_candidate_classification/toy_candidate_classification_references.json'
+    resFile = 'experimental_data/toy_candidate_classification/toy_candidate_classification_correct_candidates.json'
+    results_correct = compute_metrics(annFile, resFile)
+
+    resFile = 'experimental_data/toy_candidate_classification/toy_candidate_classification_incorrect_candidates.json'
+    results_incorrect = compute_metrics(annFile, resFile)
+
+    results = {'CIDEr-R CC':[], 'CIDEr-R IC':[],
+               'CIDEr-D CC':[], 'CIDEr-D IC':[],
+               'SPICE CC':[], 'SPICE IC':[],
+               'METEOR CC':[], 'METEOR IC':[],
+               'ROUGE CC':[], 'ROUGE IC':[],
+               'BLEU4 CC':[], 'BLEU4 IC':[]}
+    for k, cc_v in results_correct.items():
+        ic_v = results_incorrect[k]
+        results['CIDEr-R IC'].append(100*ic_v['CIDEr-R'])
+        results['CIDEr-R CC'].append(100*cc_v['CIDEr-R'])
+        results['CIDEr-D IC'].append(100*ic_v['CIDEr'])
+        results['SPICE CC'].append(100*cc_v['SPICE'])
+        results['SPICE IC'].append(100*ic_v['SPICE'])
+        results['CIDEr-D CC'].append(100*cc_v['CIDEr'])
+        results['ROUGE IC'].append(100*ic_v['ROUGE_L'])
+        results['ROUGE CC'].append(100*cc_v['ROUGE_L'])
+        results['METEOR IC'].append(100*ic_v['METEOR'])
+        results['METEOR CC'].append(100*cc_v['METEOR'])
+        results['BLEU4 IC'].append(100*ic_v['Bleu_4'])
+        results['BLEU4 CC'].append(100*cc_v['Bleu_4'])
+
+    df = pd.DataFrame(results)
+    df.to_csv('toy_candidate_classification_results.csv')
+
 
 if __name__ == '__main__':
     # triplets, sent_to_index = load_pascal_triplets()
-    # pairs = loadmat('experiment_data/pair_pascal.mat')
+    # pairs = loadmat('experimental_data/pair_pascal.mat')
     # exp_5_references_pascal_50s(triplets, sent_to_index, pairs=pairs)
     #
     # exp_varying_n_refs(triplets, sent_to_index=sent_to_index, imgfile='pascal_50S.png', csvfile='pascal_50S.csv')
@@ -558,8 +589,9 @@ if __name__ == '__main__':
     #                    only_MM=True, pairs=pairs)
 
     # exp_pracegover(output_file='results_pracegover_complete.json')
-    with open('experiment_data/mscoco_triplets_complete.json') as file:
-        data = json.load(file)
-
-    exp_mscoco_varying_n_refs(data['HCI'], imgfile='mscoco_HCI.png', csvfile='mscoco_HCI.csv')
-    exp_mscoco_varying_n_refs(data['HII'], imgfile='mscoco_HII.png', csvfile='mscoco_HII.csv')
+    # with open('experimental_data/mscoco_triplets_complete.json') as file:
+    #     data = json.load(file)
+    #
+    # exp_mscoco_varying_n_refs(data['HCI'], imgfile='mscoco_HCI.png', csvfile='mscoco_HCI.csv')
+    # exp_mscoco_varying_n_refs(data['HII'], imgfile='mscoco_HII.png', csvfile='mscoco_HII.csv')
+    compute_score_for_toy_candidate_classification()
