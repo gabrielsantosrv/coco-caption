@@ -554,7 +554,8 @@ def compute_score_for_toy_candidate_classification():
     resFile = 'experimental_data/toy_candidate_classification/toy_candidate_classification_incorrect_candidates.json'
     results_incorrect = compute_metrics(annFile, resFile)
 
-    results = {'CIDEr-R CC':[], 'CIDEr-R IC':[],
+    results = { 'key':[],
+                'CIDEr-R CC':[], 'CIDEr-R IC':[],
                'CIDEr-D CC':[], 'CIDEr-D IC':[],
                'SPICE CC':[], 'SPICE IC':[],
                'METEOR CC':[], 'METEOR IC':[],
@@ -562,12 +563,13 @@ def compute_score_for_toy_candidate_classification():
                'BLEU4 CC':[], 'BLEU4 IC':[]}
     for k, cc_v in results_correct.items():
         ic_v = results_incorrect[k]
+        results['key'].append(k)
         results['CIDEr-R IC'].append(100*ic_v['CIDEr-R'])
         results['CIDEr-R CC'].append(100*cc_v['CIDEr-R'])
         results['CIDEr-D IC'].append(100*ic_v['CIDEr'])
+        results['CIDEr-D CC'].append(100 * cc_v['CIDEr'])
         results['SPICE CC'].append(100*cc_v['SPICE'])
         results['SPICE IC'].append(100*ic_v['SPICE'])
-        results['CIDEr-D CC'].append(100*cc_v['CIDEr'])
         results['ROUGE IC'].append(100*ic_v['ROUGE_L'])
         results['ROUGE CC'].append(100*cc_v['ROUGE_L'])
         results['METEOR IC'].append(100*ic_v['METEOR'])
