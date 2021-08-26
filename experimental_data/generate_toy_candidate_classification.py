@@ -55,7 +55,7 @@ incorrect_cand.extend([{"image_id": i, "caption": 'a bird sitting on  the on on 
 
 incorrect_cand.append({"image_id": 10, "caption": 'cat laying on couch looking into distance with remote control by paw'})
 incorrect_cand.append({"image_id": 11, "caption": 'cat looking into distance with remote control'})
-incorrect_cand.append({"image_id": 12, "caption": 'cat looking into distance'})
+incorrect_cand.append({"image_id": 12, "caption": 'cat looking into distance distance distance'})
 incorrect_cand.append({"image_id": 13, "caption": 'cat with remote control by paw'})
 incorrect_cand.append({"image_id": 14, "caption": 'a cat with a remote control'})
 
