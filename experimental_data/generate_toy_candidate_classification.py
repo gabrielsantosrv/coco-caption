@@ -43,10 +43,10 @@ correct_cand = [{"image_id": 0, "caption": 'A young girl is about to blow out he
                 {"image_id": 5, "caption": 'a mottled brown dog and cow with two little birds outdoors'},
                 {"image_id": 6, "caption": 'a cow standing next to a dog on dirt ground'},
                 {"image_id": 7, "caption": 'a dog with a bird and a large cow on a street'},
-                {"image_id": 8, "caption": 'a dog and a cow with a bird on its back'},
+                {"image_id": 8, "caption": 'a dog and a cow with a bird sitting on its back'},
                 {"image_id": 9, "caption": 'a cow and a dog on a street'}]
 
-correct_cand.extend([{"image_id": i, "caption": 'a dog with a remote control'} for i in range(10,15)])
+correct_cand.extend([{"image_id": i, "caption": 'a dog next to a remote control'} for i in range(10,15)])
 
 ### incorrect candidate
 
