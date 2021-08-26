@@ -74,7 +74,7 @@ class COCOEvalCap:
         self.eval[method] = score
 
     def setImgToEvalImgs(self, scores, imgIds, method):
-        if method == 'METEOR':
+        if method == 'METEOR' or method == 'SPICE':
             imgIds.sort()
 
         for imgId, score in zip(imgIds, scores):
